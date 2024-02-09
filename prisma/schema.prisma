@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+enum Role {
+    USER
+    ADMIN
+}
+
+enum RentalStatus {
+    PENDING
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+}
+
+model Customer {
+    id               Int           @id @default(autoincrement())
+    role             Role          @default(USER)
+    fname            String        @map("fname")
+    lname            String        @map("lname")
+    numberPhone      String?       @map("number_phone")
+    email            String        @unique
+    password         String
+    address          String
+    rentals          Rental[]
+    rentalDetails    RentalDetails[]
+    orders           OrderRent[]  
+}
+
+
+
+model Rental {
+    id            Int            @id @default(autoincrement())
+    total_price   Int            @default(0)
+    email         String?
+    address       String
+    first_date    DateTime
+    end_date      DateTime
+    status        RentalStatus   @default(PENDING)
+    customer      Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    customerId    Int            @map("customer_id")
+}
+
+model RentalDetails {
+    id               Int            @id @default(autoincrement())
+    total            Int            @default(0)
+    customer         Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    customerId       Int            @unique @map("customer_id")
+    motorcycles      Motorcycle[]
+    orders           OrderRent[]    
+}
+
+
+model Motorcycle {
+    id              Int          @id @default(autoincrement())
+    model           String
+    rental_rate     String
+    brand_motor     BrandMotor   @relation(fields: [brandMotorId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    brandMotorId    Int          @map("brand_motor_id")
+    motor_type      MotorType    @relation(fields: [motorTypeId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    motorTypeId     Int          @map("motorcycle_type_id")
+    name            String
+    rentalDetails   RentalDetails[] 
+}
+
+
+model MotorType {
+    id          Int          @id @default(autoincrement())
+    sport       String
+    touring     String
+    off_road    String
+    scooter     String
+    motorcycles Motorcycle[] 
+}
+
+
+model BrandMotor {
+    id            Int      @id @default(autoincrement())
+    brand_name    String
+    brand_type    String
+    motorcycles   Motorcycle[]  
+}
+
+
+model OrderRent {
+    id                Int            @id @default(autoincrement())
+    order_date        DateTime       @default(now()) @map("order_date")
+    total             Int            @default(0)
+    customer          Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    customerId        Int            @map("customer_id")
+    rental_details    RentalDetails[]
+    payments          Payment[]
+}
+
+model Payment {
+    id                  Int      @id @default(autoincrement())
+    payment_date        DateTime @default(now()) @map("payment_date")
+    payment_method      String   @map("payment_method")
+    amount_paid         Float    @map("amount_paid")
+    order_rent          OrderRent    @relation(fields: [orderRentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    orderRentId         Int            @map("order_rent_id")
+}
